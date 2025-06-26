@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your visual guide to understanding pointers from raw memory access to smart safe ownership</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .bg-primary-dark { background-color: #000428; }
+        .bg-primary-medium { background-color: #004e92; }
+        .text-accent { color: #13B0A5; }
+        .bg-accent { background-color: #13B0A5; }
+        .border-accent { border-color: #13B0A5; }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        
+        .flowchart-node {
+            border: 2px solid #004e92;
+            background-color: #ffffff;
+            color: #000428;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            min-width: 120px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        .flowchart-arrow {
+            position: relative;
+            flex-grow: 1;
+            height: 2px;
+            background-color: #004e92;
+            margin: 0 1rem;
+        }
+
+        .flowchart-arrow::after {
+            content: '▶';
+            position: absolute;
+            right: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #004e92;
+            font-size: 1.25rem;
+        }
+        .code-block {
+            background-color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+        }
+        .icon-small {
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-primary-dark text-white text-center py-12 px-4">
+        <h1 class="text-4xl md:text-5xl font-black tracking-tight">Mastering C++ Pointers</h1>
+        <p class="text-lg md:text-xl mt-4 max-w-3xl mx-auto text-gray-300">Your visual guide to understanding pointers from raw memory access to smart safe ownership</p>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-center mb-2 text-primary-medium">What is a Pointer?</h2>
+            <p class="text-center max-w-2xl mx-auto mb-8 text-gray-600">At its heart, a pointer doesn't hold data; it holds an <span class="font-bold text-accent">address</span>. Think of it as a signpost that tells you exactly where in memory a piece of data lives.</p>
+            <div class="bg-white rounded-lg shadow-lg p-6 md:p-8">
+                <div class="flex flex-col md:flex-row justify-center items-center gap-8">
+                    <div class="text-center">
+                        <div class="bg-gray-100 p-6 rounded-lg shadow-inner">
+                            <p class="text-sm text-gray-500">Variable: `myAge`</p>
+                            <p class="text-4xl font-bold text-primary-dark">25</p>
+                            <p class="text-xs font-mono bg-gray-200 text-gray-600 px-2 py-1 rounded mt-2 inline-block">Address: 0x7FFC...A1B2</p>
+                        </div>
+                    </div>
+                    <div class="text-5xl text-accent font-black hidden md:block">→</div>
+                    <div class="text-5xl text-accent font-black rotate-90 md:hidden">→</div>
+                    <div class="text-center">
+                         <div class="bg-accent/10 p-6 rounded-lg shadow-inner border-2 border-dashed border-accent">
+                            <p class="text-sm text-gray-500">Pointer: `ptrToAge`</p>
+                            <p class="text-4xl font-bold text-primary-dark font-mono">0x7FFC...A1B2</p>
+                            <p class="text-xs text-gray-600 px-2 py-1 rounded mt-2">Value stored is the address</p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="text-center mt-6">
+                    <p class="text-gray-700"><span class="font-bold text-accent icon-small">&</span> (Address-of) gets the memory address. <span class="font-bold text-accent icon-small">*</span> (Dereference) goes to that address to get the value. So <code class="bg-gray-200 p-1 rounded font-mono text-sm">*ptrToAge</code> gives: <span class="font-bold text-2xl text-accent">25</span></p>
+                </div>
+                <h3 class="text-xl font-bold mt-8 mb-2 text-primary-medium">Real-Time Use & Advantage</h3>
+                <p class="text-gray-600">Pointers allow direct manipulation of data in memory, crucial for low-level tasks like hardware interaction or optimizing performance by avoiding large data copies. It provides fine-grained control over how data is stored and accessed.</p>
+                <h3 class="text-xl font-bold mt-4 mb-2 text-primary-medium">Simple Example</h3>
+                <div class="code-block">
+                    <pre><code>int x = 10;
+int *ptr = &x; // ptr holds address of x
+
+std::cout << "Value of x: " << x << std::endl;
+std::cout << "Value at ptr: " << *ptr << std::endl;
+
+*ptr = 20; // Change value of x via ptr
+std::cout << "New value of x: " << x << std::endl;</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-center mb-2 text-primary-medium">The Pointer Family</h2>
+            <p class="text-center max-2xl mx-auto mb-8 text-gray-600">Not all pointers are the same. Each has its own behavior and purpose, from the safe and empty to the dangerously wild.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-bold mb-2 flex items-center"><span class="text-3xl mr-3">🏕️</span> The "Empty Lot" Pointer</h3>
+                    <p class="text-gray-600">A <code class="bg-gray-200 text-sm p-1 rounded">nullptr</code> points to nothing. It's your safety net, preventing crashes from using uninitialized pointers.</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Advantage: ✅ Safety Check</p>
+                    <p class="text-sm text-gray-600">Prevents immediate undefined behavior; allows safe checks before dereferencing.</p>
+                    <h4 class="text-md font-bold mt-3 mb-1 text-primary-medium">Example:</h4>
+                    <div class="code-block text-xs py-2 px-3">
+                        <pre><code>int *safePtr = nullptr;
+if (safePtr == nullptr) {
+    // Handle safely
+}</code></pre>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-bold mb-2 flex items-center"><span class="text-3xl mr-3">📦</span> The "Mystery Box" Pointer</h3>
+                    <p class="text-gray-600">A <code class="bg-gray-200 text-sm p-1 rounded">void*</code> can point to any data type, but you must cast it to the correct type before you can access the data inside.</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Use Case: 🧩 Generic Functions</p>
+                    <p class="text-sm text-gray-600">Functions handling raw memory for different types (e.g., `memcpy`, `malloc`).</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Disadvantage: 🚫 Type Safety</p>
+                    <p class="text-sm text-gray-600">Lacks type safety; easy to misinterpret data if cast incorrectly.</p>
+                    <h4 class="text-md font-bold mt-3 mb-1 text-primary-medium">Example:</h4>
+                    <div class="code-block text-xs py-2 px-3">
+                        <pre><code>int i = 10;
+void *ptr = &i;
+std::cout << *(static_cast<int*>(ptr)); // Prints 10</code></pre>
+                    </div>
+                </div>
+                <div class="bg-red-50 border border-red-200 rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-bold mb-2 flex items-center text-red-700"><span class="text-3xl mr-3">👻</span> The Dangling Pointer (DANGER)</h3>
+                    <p class="text-red-600">This pointer references memory that has been freed. Accessing it leads to undefined behavior and crashes. A common bug source!</p>
+                    <p class="text-sm font-bold mt-3 text-red-700">Disadvantage: 💥 Crashes & Corruption</p>
+                    <p class="text-sm text-red-600">Leads to unpredictable crashes, data corruption, and security vulnerabilities.</p>
+                    <h4 class="text-md font-bold mt-3 mb-1 text-red-700">Example:</h4>
+                    <div class="code-block text-xs py-2 px-3 bg-red-100">
+                        <pre><code>int *p = new int(5);
+delete p;
+// p is now dangling!
+// *p = 10; // UB!</code></pre>
+                    </div>
+                </div>
+                <div class="bg-red-50 border border-red-200 rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-bold mb-2 flex-items-center text-red-700"><span class="text-3xl mr-3">🧭</span> The Wild Pointer (DANGER)</h3>
+                    <p class="text-red-600">An uninitialized pointer. It holds a random memory address. Using it is one of the fastest ways to corrupt memory and crash your application.</p>
+                    <p class="text-sm font-bold mt-3 text-red-700">Disadvantage: 💣 Catastrophic Errors</p>
+                    <p class="text-sm text-gray-600">Catastrophic errors; can overwrite critical program data or cause segmentation faults.</p>
+                    <h4 class="text-md font-bold mt-3 mb-1 text-red-700">Example:</h4>
+                    <div class="code-block text-xs py-2 px-3 bg-red-100">
+                        <pre><code>int *uninitPtr; // WILD!
+// *uninitPtr = 50; // DANGER!</code></pre>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6 md:col-span-2 lg:col-span-1">
+                    <h3 class="text-xl font-bold mb-2 flex items-center"><span class="text-3xl mr-3">📜</span> The Rule-Bound Pointer</h3>
+                    <p class="text-gray-600"><code class="bg-gray-200 text-sm p-1 rounded">const</code> adds rules. You can make the data unchangeable (<code class="font-mono">const int *</code>) or the pointer's address fixed (<code class="font-mono">int * const</code>).</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Use Case: 🔒 Data Integrity</p>
+                    <p class="text-sm text-gray-600">Ensuring data integrity in functions (e.g., a function receives a pointer to a string but shouldn't modify it).</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Advantage: ✅ Compile-Time Safety</p>
+                    <p class="text-sm text-gray-600">Compile-time safety and clarity regarding intent of data access.</p>
+                    <h4 class="text-md font-bold mt-3 mb-1 text-primary-medium">Examples:</h4>
+                    <div class="code-block text-xs py-2 px-3">
+                        <pre><code>const int *p_to_const; // Can't change *p_to_const
+int *const const_p; // Can't change const_p itself</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold text-center mb-2 text-primary-medium">Pointer Power-Ups!</h2>
+            <p class="text-center max-w-2xl mx-auto mb-8 text-gray-600">Pointers are the key to unlocking some of C++'s most powerful features, from managing memory on-the-fly to enabling object-oriented magic.</p>
+            <div class="space-y-8">
+                 <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-2xl font-bold mb-2 flex items-center">⚡ <span class="text-3xl mr-3">💾</span> The Memory Machine</h3>
+                    <p class="mb-4 text-gray-600">Pointers allow you to allocate and deallocate memory at runtime with <code class="bg-gray-200 text-sm p-1 rounded">new</code> and <code class="bg-gray-200 text-sm p-1 rounded">delete</code>. This is essential for data structures that need to grow or shrink, but it comes with risks. A forgotten <code class="bg-gray-200 text-sm p-1 rounded">delete</code> leads to a memory leak.</p>
+                    <div class="flex justify-center items-center gap-4 mb-4">
+                        <div class="flex items-center text-green-600 font-bold"><span class="text-3xl mr-2">⬆️</span> NEW</div>
+                        <div class="text-gray-400">Memory Allocation</div>
+                        <div class="flex items-center text-red-600 font-bold"><span class="text-3xl mr-2">⬇️</span> DELETE</div>
+                    </div>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Real-Time Use:</p>
+                    <p class="text-sm text-gray-600">Creating resizable data buffers for network packets, managing objects in a game level that load/unload dynamically.</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Advantage: 💪 Flexible Memory</p>
+                    <p class="text-sm text-gray-600">Efficient memory utilization; only allocate what's needed, when it's needed.</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Disadvantage: ⚠️ Manual Management</p>
+                    <p class="text-sm text-gray-600">Manual memory management is error-prone (leaks, dangling pointers).</p>
+                    
+                    <div class="chart-container mt-6">
+                        <canvas id="memoryLeakChart"></canvas>
+                    </div>
+                    <p class="text-sm text-center text-gray-700 mt-4">This chart visualizes how available system memory dwindles over time when memory leaks occur. Each 'Operation (Leak)' represents a scenario where memory is allocated dynamically but not properly deallocated. As these leaks accumulate, your program consumes more and more memory, leading to decreased system performance and eventual crashes.</p>
+                    <h4 class="text-md font-bold mt-6 mb-1 text-primary-medium">Example: Illustrating a Memory Leak</h4>
+                    <p class="text-sm text-gray-600 mb-2">Below is a simplified example illustrating how a memory leak can occur in code when `delete` is forgotten or a pointer is lost, preventing memory from being reclaimed.</p>
+                    <div class="code-block">
+                        <pre><code>void createMemoryLeak() {
+    int *data = new int(10); // Allocate memory for an int
+    // No 'delete data;' here!
+    // When this function ends, 'data' pointer is lost,
+    // but the memory it pointed to is NOT freed.
+    // This is a memory leak.
+}
+
+int main() {
+    for (int i = 0; i < 3; ++i) {
+        createMemoryLeak(); // Each call leaks memory
+    }
+    // Program finishes, but 3 'int's worth of memory are still
+    // allocated and unusable until the OS reclaims them.
+    return 0;
+}</code></pre>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-2xl font-bold mb-2 flex items-center">🔗 <span class="text-3xl mr-3">🧱</span> Building Blocks: Data Structures</h3>
+                    <p class="mb-6 text-gray-600">Pointers are the glue for fundamental data structures like Linked Lists. Each node contains data and a pointer that links it to the next node in the chain.</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Real-Time Use:</p>
+                    <p class="text-sm text-gray-600">Implementing game inventories, undo/redo features in an editor, or managing dynamic queues/stacks.</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Advantage: 🔄 Flexible Size</p>
+                    <p class="text-sm text-gray-600">Flexible size, efficient insertions and deletions compared to static arrays.</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Disadvantage: 📈 Higher Overhead</p>
+                    <p class="text-sm text-gray-600">More complex to implement and manage, higher memory overhead per node.</p>
+                    <h4 class="text-md font-bold mt-3 mb-1 text-primary-medium">Example: Linked List Node</h4>
+                    <div class="code-block">
+                        <pre><code>struct Node {
+    int data;
+    Node *next; // Pointer to the next node
+};
+
+Node *head = new Node{10, nullptr};
+Node *second = new Node{20, nullptr};
+head->next = second; // Link them!</code></pre>
+                    </div>
+                    <div class="flex justify-center items-center flex-wrap gap-4 mt-6">
+                        <div class="flowchart-node">Node A<br><span class="text-xs font-mono">data: 10</span></div>
+                        <div class="flowchart-arrow"></div>
+                        <div class="flowchart-node">Node B<br><span class="text-xs font-mono">data: 20</span></div>
+                        <div class="flowchart-arrow"></div>
+                        <div class="flowchart-node">Node C<br><span class="text-xs font-mono">data: 30</span></div>
+                         <div class="flowchart-arrow"></div>
+                        <div class="flowchart-node bg-gray-100 border-gray-300">nullptr</div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-2xl font-bold mb-2 flex items-center">🎩 <span class="text-3xl mr-3">💫</span> Shape-Shifters: Polymorphism</h3>
+                    <p class="mb-6 text-gray-600">A base class pointer can point to any derived class object. This allows you to write flexible code where the correct function is called at runtime, which is the essence of virtual functions.</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Real-Time Use:</p>
+                    <p class="text-sm text-gray-600">Creating diverse game characters with common behaviors (e.g., `attack()` method for different characters), or generic GUI elements that react differently.</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Advantage: 🧩 Flexible Design</p>
+                    <p class="text-sm text-gray-600">Flexible, extensible design; allows new derived types to be added without changing existing code that uses the base pointer.</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Disadvantage: 🐢 Runtime Overhead</p>
+                    <p class="text-sm text-gray-600">Small runtime performance overhead due to virtual table lookups.</p>
+                    <h4 class="text-md font-bold mt-3 mb-1 text-primary-medium">Example: Character Attacks</h4>
+                    <div class="code-block">
+                        <pre><code>class Character { public: virtual void attack() {} };
+class Warrior : public Character { public: void attack() { /* swing axe */ } };
+class Mage : public Character { public: void attack() { /* cast spell */ } };
+
+Character *hero;
+Warrior bob;
+Mage alice;
+
+hero = &bob;
+hero->attack(); // Calls Warrior's attack()
+
+hero = &alice;
+hero->attack(); // Calls Mage's attack()</code></pre>
+                    </div>
+                    <div class="flex flex-col items-center gap-6 mt-6">
+                        <div class="flowchart-node bg-accent/20 border-accent">Base Pointer<br><code class="text-xs">Character* hero;</code></div>
+                        <div class="w-px h-8 bg-gray-300"></div>
+                        <div class="flex flex-col md:flex-row gap-8">
+                            <div class="flex flex-col items-center gap-2">
+                                <div class="w-px h-8 bg-gray-300 transform -rotate-45 translate-x-8 translate-y-2"></div>
+                                <div class="flowchart-node">Warrior ⚔️<br><code class="text-xs">Warrior bob;</code></div>
+                            </div>
+                            <div class="flex flex-col items-center gap-2">
+                                <div class="w-px h-8 bg-gray-300 transform rotate-45 -translate-x-8 translate-y-2"></div>
+                                <div class="flowchart-node">Mage 🧙‍♀️<br><code class="text-xs">Mage alice;</code></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+             <h2 class="text-3xl font-bold text-center mb-2 text-primary-medium">The Smart Pointer Heroes!</h2>
+             <p class="text-center max-w-3xl mx-auto mb-8 text-gray-600">Modern C++ introduced Smart Pointers to automatically manage memory, eliminating most risks associated with raw pointers. They handle cleanup for you, preventing memory leaks and dangling pointers.</p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-accent">
+                    <h3 class="text-2xl font-bold mb-2 flex items-center">🤠 <span class="text-3xl mr-3">🧍‍♂️</span> `std::unique_ptr`</h3>
+                    <p class="font-bold text-primary-medium mb-2">The Lone Ranger</p>
+                    <p class="text-gray-600 mb-4">Provides exclusive, lightweight ownership. Only one `unique_ptr` can own the memory. It cannot be copied, only moved. This is the default, safest choice.</p>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1">
+                        <li><span class="font-bold">Ownership:</span> Exclusive</li>
+                        <li><span class="font-bold">Copyable:</span> No ❌</li>
+                        <li><span class="font-bold">Movable:</span> Yes ✅</li>
+                    </ul>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Real-Time Use:</p>
+                    <p class="text-sm text-gray-600">Managing a single game asset (e.g., a specific texture loaded for one object), a file handle, or a network connection.</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Advantage: 🚀 Automatic Cleanup</p>
+                    <p class="text-sm text-gray-600">Automatic memory deallocation, zero runtime overhead (like a raw pointer after construction).</p>
+                    <h4 class="text-md font-bold mt-3 mb-1 text-primary-medium">Example:</h4>
+                    <div class="code-block text-xs py-2 px-3">
+                        <pre><code>#include &lt;memory&gt;
+std::unique_ptr<int> data = std::make_unique<int>(100);
+// data is automatically deleted when it goes out of scope</code></pre>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-primary-medium">
+                    <h3 class="text-2xl font-bold mb-2 flex items-center">🤗 <span class="text-3xl mr-3">👥</span> `std::shared_ptr`</h3>
+                    <p class="font-bold text-primary-medium mb-2">The Buddy System</p>
+                    <p class="text-gray-600 mb-4">Allows multiple pointers to share ownership of the same resource. It uses a reference count, and the memory is freed only when the last `shared_ptr` is destroyed.</p>
+                     <ul class="list-disc list-inside text-gray-700 space-y-1">
+                        <li><span class="font-bold">Ownership:</span> Shared</li>
+                        <li><span class="font-bold">Copyable:</span> Yes ✅</li>
+                        <li><span class="font-bold">Movable:</span> Yes ✅</li>
+                    </ul>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Real-Time Use:</p>
+                    <p class="text-sm text-gray-600">Game assets (e.g., a common enemy model shared by many enemy instances), shared configuration objects, or thread-safe data access.</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Advantage: ✨ Shared Resources</p>
+                    <p class="text-sm text-gray-600">Convenient for shared resources; automatic cleanup based on reference count.</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Disadvantage: 🔄 Ref-Count Overhead</p>
+                    <p class="text-sm text-gray-600">Runtime overhead of reference counting; potential for circular dependencies leading to leaks.</p>
+                     <div class="chart-container h-48 mt-4">
+                        <canvas id="sharedPtrChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-gray-400">
+                    <h3 class="text-2xl font-bold mb-2 flex items-center">👀 <span class="text-3xl mr-3">👁️</span> `std::weak_ptr`</h3>
+                    <p class="font-bold text-primary-medium mb-2">The Nosy Neighbor</p>
+                    <p class="text-gray-600 mb-4">A non-owning observer of a `shared_ptr`. It doesn't affect the reference count and is used to break circular dependencies that would otherwise cause memory leaks.</p>
+                     <ul class="list-disc list-inside text-gray-700 space-y-1">
+                        <li><span class="font-bold">Ownership:</span> None</li>
+                        <li><span class="font-bold">Purpose:</span> Break circular references</li>
+                        <li><span class="font-bold">Access:</span> Must be `lock()`ed</li>
+                    </ul>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Real-Time Use:</p>
+                    <p class="text-sm text-gray-600">Implementing observer patterns where observers shouldn't keep the subject alive, or caching systems where cached objects can be evicted if no longer referenced.</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Advantage: 🛡️ Prevents Cycles</p>
+                    <p class="text-sm text-gray-600">Prevents memory leaks in cyclic `shared_ptr` relationships; allows safe checking if an object still exists.</p>
+                    <p class="text-sm font-bold mt-3 text-primary-medium">Disadvantage: 🧩 Access Complexity</p>
+                    <p class="text-sm text-gray-600">Requires conversion to `shared_ptr` to access data; adds a layer of complexity.</p>
+                    <h4 class="text-md font-bold mt-3 mb-1 text-primary-medium">Example:</h4>
+                    <div class="code-block text-xs py-2 px-3">
+                        <pre><code>#include &lt;memory&gt;
+std::shared_ptr<int> s = std::make_shared<int>(5);
+std::weak_ptr<int> w = s;
+
+if (auto temp_s = w.lock()) { // Check & get shared_ptr
+    std::cout << *temp_s; // Prints 5
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="bg-primary-dark text-white text-center py-8 px-4 mt-16">
+        <h2 class="text-2xl font-bold">Ready to Master Pointers?</h2>
+        <p class="mt-2 max-w-xl mx-auto">The best way to learn is by doing. Practice these concepts, draw memory diagrams, and always prefer smart pointers in modern C++!</p>
+    </footer>
+
+    <script>
+        function wrapLabels(label, maxWidth) {
+            const words = label.split(' ');
+            const lines = [];
+            let currentLine = '';
+
+            for (const word of words) {
+                if ((currentLine + word).length < maxWidth) {
+                    currentLine += (currentLine === '' ? '' : ' ') + word;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+            lines.push(currentLine);
+            return lines;
+        }
+
+        const tooltipConfig = {
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            const item = tooltipItems[0];
+                            let label = item.chart.data.labels[item.dataIndex];
+                            return Array.isArray(label) ? label.join(' ') : label;
+                        }
+                    }
+                }
+            }
+        };
+
+        const memoryLeakCtx = document.getElementById('memoryLeakChart').getContext('2d');
+        new Chart(memoryLeakCtx, {
+            type: 'line',
+            data: {
+                labels: ['Start', 'Operation 1', wrapLabels('Op 2 (Memory Leak)', 16), wrapLabels('Op 3 (Another Leak)', 16), 'Operation 4', wrapLabels('Op 5 (Final Leak)', 16)],
+                datasets: [{
+                    label: 'Available System Memory',
+                    data: [100, 95, 90, 85, 82, 75],
+                    fill: true,
+                    borderColor: '#E53E3E',
+                    backgroundColor: 'rgba(229, 62, 62, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                ...tooltipConfig,
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%'
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    ...tooltipConfig.plugins,
+                    title: {
+                        display: true,
+                        text: 'Impact of Memory Leaks Over Time'
+                    }
+                }
+            }
+        });
+
+        const sharedPtrCtx = document.getElementById('sharedPtrChart').getContext('2d');
+        new Chart(sharedPtrCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Owner 1 (sPtr1)', 'Owner 2 (sPtr2)', 'Owner 3 (sPtr3)'],
+                datasets: [{
+                    label: 'Reference Count',
+                    data: [1, 1, 1],
+                    backgroundColor: [
+                        '#004e92',
+                        '#428bca',
+                        '#13B0A5'
+                    ],
+                    borderColor: '#ffffff',
+                    borderWidth: 2,
+                }]
+            },
+            options: {
+                 ...tooltipConfig,
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                     ...tooltipConfig.plugins,
+                    title: {
+                        display: true,
+                        text: 'Shared_ptr Reference Count Visualization'
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 20
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
